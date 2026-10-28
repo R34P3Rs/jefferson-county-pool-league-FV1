@@ -1,0 +1,10 @@
+{
+  "name": "Jefferson County Pool League",
+  "short_name": "JC Pool League",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0a111b",
+  "theme_color": "#0a111b",
+  "description": "Official Jefferson County 8-ball pool league standings, schedule and statistics."
+}
