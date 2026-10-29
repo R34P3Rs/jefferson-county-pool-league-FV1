@@ -141,8 +141,8 @@ if(!Array.isArray(data.teams)||!data.teams.length)data.teams=starter().teams;
 data.games=data.games.map((g,i)=>({...g,id:g.id||`legacy-${g.date}-${g.team}-${g.player}-${g.gameNumber||i}`,run:!!g.run,break8:!!g.break8,opponentTeam:g.opponentTeam||""}));
 let logged=false,editingTeam=null,cloudClient=null;
 const cloudStatus=msg=>{const el=document.getElementById("cloudStatus");if(el)el.textContent=msg};
-function save(){data.updated=new Date().toISOString();localStorage.setItem("jcpl-data",JSON.stringify(data));render();if(cloudClient&&logged)persistCloudData()}
-async function persistCloudData(){try{const {error}=await cloudClient.from("league_state").upsert({id:1,payload:data,updated_at:new Date().toISOString()},{onConflict:"id"});if(error)throw error;cloudStatus("Connected · shared league data saved")}catch(e){console.error(e);cloudStatus("Cloud save failed · check database setup");notice("Cloud save failed",e.message||"The database rejected this change. Check Supabase permissions.")}}
+function save(){data.updated=new Date().toISOString();localStorage.setItem("jcpl-data",JSON.stringify(data));render();if(cloudClient&&logged)return persistCloudData();return Promise.resolve(false)}
+async function persistCloudData(){if(!cloudClient||!logged){cloudStatus("Not saved to cloud · sign in to an authorized admin account");return false}try{const {error}=await cloudClient.from("league_state").upsert({id:1,payload:data,updated_at:new Date().toISOString()},{onConflict:"id"});if(error)throw error;cloudStatus("Connected · shared league data saved");return true}catch(e){console.error("Supabase save failed:",e);cloudStatus("Cloud save failed · changes not shared");notice("Cloud save failed",e.message||"Supabase rejected this save. Check admin permissions and database policies.");return false}}
 async function initializeCloud(){const cfg=window.JCPL_CONFIG||{};if(!cfg.supabaseUrl||!cfg.supabaseAnonKey||cfg.supabaseUrl.includes("YOUR_PROJECT")||cfg.supabaseAnonKey.includes("YOUR_SUPABASE")){cloudStatus("Setup needed · configure config.js");const st=document.getElementById("authStatus");if(st)st.textContent="Setup needed: check config.js.";render();return}
 try{if(!window.supabase)throw new Error("Supabase JavaScript library did not load. Refresh the page or check the network.");cloudClient=window.supabase.createClient(cfg.supabaseUrl,cfg.supabaseAnonKey);const {data:row,error}=await cloudClient.from("league_state").select("payload,updated_at").eq("id",1).maybeSingle();if(error)throw error;if(row&&row.payload){data={...starter(),...row.payload};if(!Array.isArray(data.teams)||!data.teams.length)data.teams=starter().teams;if(!Array.isArray(data.teamWeeks))data.teamWeeks=[];ensureRosterTeams();if(!Array.isArray(data.schedule)||!data.schedule.length||(data.season==="2026–27"&&data.schedule.some(x=>(x.date==="2026-12-16"&&String(x.opponent||x.event).includes("Bitz\'s II (#5)"))||(x.date==="2027-01-20"&&String(x.opponent||x.event).includes("Rock River Lanes I (#10)"))||(x.date==="2027-03-17"&&String(x.opponent||x.event).includes("Bitz\'s II (#5)"))||(x.date==="2027-04-21"&&String(x.opponent||x.event).includes("Rock River Lanes I (#10)")))))data.schedule=starter().schedule;data.games=(data.games||[]).map((g,i)=>({...g,id:g.id||`legacy-${g.date}-${g.team}-${g.player}-${g.gameNumber||i}`,run:!!g.run,break8:!!g.break8,opponentTeam:g.opponentTeam||""}));localStorage.setItem("jcpl-data",JSON.stringify(data))}
 const {data:{session}}=await cloudClient.auth.getSession();if(session)await activateAdminSession(session.user);
@@ -172,9 +172,40 @@ function refreshBulkPlayers(){renderBulkRows();updateOpponentPlayerOptions();upd
 function syncBulkOpponent(){const date=document.getElementById("bulkDate").value,sch=data.schedule.find(s=>s.date===date);const opponent=sch?.opponent||sch?.event||"";const num=(opponent.match(/#(\d+)/)||[])[1];const numberMap={"1":"Lou's 1","2":"Lou's 2","3":"Bitz's 1","4":"Fairview 1","5":"Rock River Lanes 1","6":"Soup's On","7":"Lucy's Hideaway","8":"Lou's 3","9":"Lou's 4","10":"Bitz's 2","11":"Fairview 2","12":"Rock River Lanes 2","13":"Stella's","14":"BYE"};let match=num?numberMap[num]:teamNames.find(n=>opponent.toLowerCase().includes(n.toLowerCase()));if(match&&document.getElementById("bulkTeam").value===match)match="";if(match)document.getElementById("bulkOpponentTeam").value=match;const weekDate=document.getElementById("teamWeekDate");if(weekDate)weekDate.value=date;const opp=document.getElementById("teamWeekOpponent");if(opp&&match)opp.value=match;updateOpponentPlayerOptions();}
 function updateBulkStatus(){const n=[...document.querySelectorAll(".bulk-result")].filter(x=>x.value).length;const el=document.getElementById("bulkStatus");if(el)el.textContent=`${n} of 16 results entered.`}
 function clearBulkGames(){document.querySelectorAll(".game-entry").forEach(row=>{row.querySelector(".bulk-result").value="";row.querySelector(".bulk-opponent").value="";row.querySelector(".bulk-run").value="No";row.querySelector(".bulk-break8").value="No";row.querySelector(".bulk-default").value="No"});updateBulkStatus()}
-function saveBulkGames(){if(!requireAdmin())return;const date=document.getElementById("bulkDate").value,team=document.getElementById("bulkTeam").value,opponentTeam=document.getElementById("bulkOpponentTeam").value;if(!date||!team){notice("Missing details","Choose a date and team.");return}const rows=[...document.querySelectorAll(".game-entry")],entries=rows.filter(r=>r.querySelector(".bulk-result").value);if(!entries.length){notice("No results entered","Select Win or Loss for at least one game.");return}if(!confirm(`Save ${entries.length} result(s) for ${team} vs ${opponentTeam} on ${fmtDate(date)}? Existing matching player/game entries for this date will be updated.`))return;
-const newGames=entries.map(r=>({id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`,date,team,player:r.dataset.player,gameNumber:Number(r.dataset.game),opponent:r.querySelector(".bulk-opponent").value.trim(),opponentTeam,result:r.querySelector(".bulk-result").value,run:r.querySelector(".bulk-run").value==="Yes",break8:r.querySelector(".bulk-break8").value==="Yes",def:r.querySelector(".bulk-default").value==="Yes",season:data.season}));
-const keys=new Set(newGames.map(g=>`${g.date}|${g.team}|${g.player}|${g.gameNumber}`));data.games=data.games.filter(g=>!keys.has(`${g.date}|${g.team}|${g.player}|${g.gameNumber||""}`));data.games.push(...newGames);save();notice("Results saved",`${newGames.length} result(s) saved for ${team} vs ${opponentTeam}.`);clearBulkGames()}
+async function saveBulkGames(){
+ if(!requireAdmin())return;
+ if(!cloudClient){notice("Cloud not connected","The app is not connected to Supabase. Results cannot be shared yet. Check the cloud status at the bottom of the page.");return}
+ const date=document.getElementById("bulkDate").value;
+ const team=document.getElementById("bulkTeam").value;
+ const opponentTeam=document.getElementById("bulkOpponentTeam").value;
+ if(!date||!team){notice("Missing details","Choose a date and team.");return}
+ const rows=[...document.querySelectorAll(".game-entry")];
+ const entries=rows.filter(r=>r.querySelector(".bulk-result").value);
+ if(!entries.length){notice("No results entered","Select Win or Loss for at least one game.");return}
+ if(!confirm(`Save ${entries.length} result(s) for ${team} vs ${opponentTeam} on ${fmtDate(date)}? Existing matching player/game entries for this date will be updated.`))return;
+ const previousGames=[...data.games];
+ const newGames=entries.map(r=>({
+  id:crypto.randomUUID?crypto.randomUUID():`${Date.now()}-${Math.random()}`,
+  date,team,player:r.dataset.player,gameNumber:Number(r.dataset.game),
+  opponent:r.querySelector(".bulk-opponent").value||"",opponentTeam,
+  result:r.querySelector(".bulk-result").value,
+  run:r.querySelector(".bulk-run").value==="Yes",
+  break8:r.querySelector(".bulk-break8").value==="Yes",
+  def:r.querySelector(".bulk-default").value==="Yes",season:data.season
+ }));
+ const keys=new Set(newGames.map(g=>`${g.date}|${g.team}|${g.player}|${g.gameNumber}`));
+ data.games=data.games.filter(g=>!keys.has(`${g.date}|${g.team}|${g.player}|${g.gameNumber||""}`));
+ data.games.push(...newGames);
+ const saved=await save();
+ if(!saved){
+  data.games=previousGames;
+  localStorage.setItem("jcpl-data",JSON.stringify(data));
+  render();
+  return;
+ }
+ notice("Results saved",`${newGames.length} result(s) were saved to the shared league database for ${team} vs ${opponentTeam}.`);
+ clearBulkGames();
+}
 function deleteMatchNight(){if(!requireAdmin())return;const date=document.getElementById("bulkDate").value,team=document.getElementById("bulkTeam").value;const matches=data.games.filter(g=>g.date===date&&g.team===team);if(!matches.length){notice("No results found",`There are no saved results for ${team} on ${fmtDate(date)}.`);return}if(!confirm(`Delete ALL ${matches.length} game result(s) for ${team} on ${fmtDate(date)}? This cannot be undone.`))return;data.games=data.games.filter(g=>!(g.date===date&&g.team===team));save();notice("Match night deleted",`Deleted ${matches.length} result(s) for ${team} on ${fmtDate(date)}.`)}
 function editGameById(id){if(!requireAdmin())return;const g=data.games.find(x=>x.id===id);if(!g){notice("Entry not found","That result may have already been deleted.");return}document.getElementById("bulkDate").value=g.date;document.getElementById("bulkTeam").value=g.team;renderBulkRows();syncBulkOpponent();updateOpponentPlayerOptions();const row=[...document.querySelectorAll(".game-entry")].find(r=>r.dataset.player===g.player&&Number(r.dataset.game)===Number(g.gameNumber));if(row){row.querySelector(".bulk-result").value=g.result;row.querySelector(".bulk-opponent").value=g.opponent||"";row.querySelector(".bulk-run").value=g.run?"Yes":"No";row.querySelector(".bulk-break8").value=g.break8?"Yes":"No";row.querySelector(".bulk-default").value=g.def?"Yes":"No";updateBulkStatus();showPage("admin");notice("Result loaded for editing","Change the fields and tap Save All Results. That player/game entry will be updated.")}}
 function deleteGameById(id){if(!requireAdmin())return;const g=data.games.find(x=>x.id===id);if(!g)return;if(confirm(`Delete ${g.player}'s Game ${g.gameNumber||""} result for ${fmtDate(g.date)}?`)){data.games=data.games.filter(x=>x.id!==id);save()}}
