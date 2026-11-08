@@ -11,7 +11,7 @@
 *{box-sizing:border-box}body{margin:0}header{background:#102d4d;color:white;padding:22px max(16px,calc((100% - 1100px)/2))}header h1{margin:0;font-size:clamp(22px,4vw,32px)}header p{margin:6px 0 0;color:#d5e5f5}
 nav{display:flex;gap:8px;flex-wrap:wrap;background:#fff;padding:12px max(12px,calc((100% - 1100px)/2));border-bottom:1px solid #dbe3ec;position:sticky;top:0;z-index:2}
 button,.btn{font:inherit;border:0;border-radius:9px;padding:10px 14px;cursor:pointer;background:#e6edf5;color:#18324b;font-weight:650}button.primary{background:#1263a5;color:white}button.danger{background:#b42318;color:white}button:disabled{opacity:.5;cursor:not-allowed}
-main{max-width:1100px;margin:20px auto;padding:0 14px}.page{display:none}.page.active{display:block}.panel{background:#fff;border:1px solid #dce4ed;border-radius:14px;padding:16px;margin:14px 0;box-shadow:0 2px 8px #18324b0b}.panel h2,.panel h3{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.field label{display:block;font-size:13px;font-weight:700;margin:0 0 5px;color:#425466}.field input,.field select{width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff;color:#17212b;font:inherit}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.muted,.tiny{color:#617285;font-size:13px}.status{font-weight:700}.entry{border:1px solid #e0e7ef;border-radius:10px;padding:12px;margin:10px 0}.entry h4{margin:0 0 10px}.entry-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:9px;border-bottom:1px solid #e2e8f0}th{background:#f5f8fb}.table-wrap{overflow:auto}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.stat{background:#eef5fb;padding:14px;border-radius:10px}.stat strong{display:block;font-size:26px}.hidden{display:none!important}.notice{padding:12px;border-radius:8px;background:#fff7e6;color:#744b00;margin:10px 0}footer{text-align:center;color:#667789;padding:18px;font-size:13px;overflow-wrap:anywhere}
+main{max-width:1100px;margin:20px auto;padding:0 14px}.page{display:none}.page.active{display:block}.panel{background:#fff;border:1px solid #dce4ed;border-radius:14px;padding:16px;margin:14px 0;box-shadow:0 2px 8px #18324b0b}.panel h2,.panel h3{margin-top:0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}.field label{display:block;font-size:13px;font-weight:700;margin:0 0 5px;color:#425466}.field input,.field select{width:100%;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;padding:8px;background:#fff;color:#17212b;font:inherit}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.muted,.tiny{color:#617285;font-size:13px}.status{font-weight:700}.entry{border:1px solid #e0e7ef;border-radius:10px;padding:12px;margin:10px 0}.entry h4{margin:0 0 10px}.entry-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:9px;border-bottom:1px solid #e2e8f0}th{background:#f5f8fb}.table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}.table-wrap table{min-width:720px}#statsPlayers table{min-width:1450px}#homePlayers table{min-width:650px}.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}.stat{background:#eef5fb;padding:14px;border-radius:10px}.stat strong{display:block;font-size:26px}.hidden{display:none!important}.notice{padding:12px;border-radius:8px;background:#fff7e6;color:#744b00;margin:10px 0}footer{text-align:center;color:#667789;padding:18px;font-size:13px;overflow-wrap:anywhere}
 dialog{border:0;border-radius:14px;max-width:460px;width:calc(100% - 30px);box-shadow:0 20px 70px #0004}dialog::backdrop{background:#102d4d88}
 @media(max-width:600px){main{margin:12px auto}nav button{flex:1 1 auto}.panel{padding:13px}th,td{padding:7px}}
 </style>
@@ -34,13 +34,14 @@ dialog{border:0;border-radius:14px;max-width:460px;width:calc(100% - 30px);box-s
 <div class="stat"><span>Table runs</span><strong id="homeRuns">0</strong></div>
 <div class="stat"><span>8-ball breaks</span><strong id="homeBreaks">0</strong></div>
 </div>
-<div class="panel"><h3>Player performance</h3><div class="table-wrap" id="homePlayers"></div></div>
+<div class="panel" id="teamOfficers"><h3>Fairview 1 · Team Officers</h3><div class="grid"><div class="stat"><span>Captain</span><strong style="font-size:20px">Alex Gromiuk</strong></div><div class="stat"><span>2nd in Command</span><strong style="font-size:20px">Joe Pucillo</strong></div></div></div>
+<div class="panel"><h3>Player rankings · season record</h3><p class="muted">Ranked by win percentage, then total wins, then game differential. Players with no recorded games are listed after active players.</p><div class="table-wrap" id="homePlayers"></div></div>
 </section>
 <section id="schedule" class="page">
 <div class="panel"><h2>2026–27 Fairview I schedule</h2><p class="muted">Official regular-season schedule. November 25 is a tournament date and is not a regular match.</p><div class="table-wrap" id="scheduleTable"></div></div>
 </section>
 <section id="stats" class="page">
-<div class="panel"><h2>Season statistics</h2><div class="table-wrap" id="statsPlayers"></div></div>
+<div class="panel"><h2>Detailed player statistics</h2><p class="muted">Individual season records, performance rates, streaks, recent form and achievement totals. Rankings use win percentage first; total wins and game differential break ties.</p><div class="table-wrap" id="statsPlayers"></div></div>
 <div class="panel"><h3>Team score sheets</h3><div class="table-wrap" id="statsWeeks"></div></div>
 </section>
 <section id="admin" class="page">
@@ -109,8 +110,67 @@ async function saveTeamWeek(){if(!logged){notice("Admin sign-in required","Sign 
 function loadTeamWeek(){const x=data.teamWeeks.find(x=>x.date===el("weekDate").value&&x.team===el("weekTeam").value);if(!x){notice("No saved entry","No weekly score sheet exists for that date and team.");return}el("weekOpponent").value=x.opponentTeam||teams[0];el("weekWins").value=x.wins||0;el("weekRuns").value=x.runs||0;el("weekBreaks").value=x.breaks||0;el("weekDefaults").value=x.defaults||0}
 async function deleteTeamWeek(){if(!logged){notice("Admin sign-in required","Sign in first.");return}const date=el("weekDate").value,team=el("weekTeam").value;if(!confirm(`Delete weekly stats for ${team} on ${date}?`))return;const old=[...data.teamWeeks];data.teamWeeks=data.teamWeeks.filter(x=>!(x.date===date&&x.team===team));try{await saveShared();renderAll()}catch(e){data.teamWeeks=old;saveLocal();notice("Delete failed",e.message)}}
 function renderSchedule(){el("scheduleTable").innerHTML='<table><thead><tr><th>Date</th><th>Opponent / event</th><th>Venue</th></tr></thead><tbody>'+data.schedule.map(s=>`<tr><td>${dateLabel(s.date)}</td><td>${esc(s.opponent||s.event||"—")}</td><td>${esc(s.venue||"—")}</td></tr>`).join("")+'</tbody></table>'}
-function calcStats(){const players=rosters["Fairview 1"];return players.map(p=>{const g=data.games.filter(x=>x.team==="Fairview 1"&&x.player===p),wins=g.filter(x=>x.result==="W").length;return{player:p,games:g.length,wins,losses:g.filter(x=>x.result==="L").length,pct:g.length?Math.round(wins/g.length*100)+"%":"—",runs:g.filter(x=>x.run).length,breaks:g.filter(x=>x.break8).length,defaults:g.filter(x=>x.def).length}})}
-function tableStats(){const rows=calcStats();const table='<table><thead><tr><th>Player</th><th>Games</th><th>W</th><th>L</th><th>Win %</th><th>Table runs</th><th>8-ball breaks</th><th>Defaults</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(x.player)}</td><td>${x.games}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.pct}</td><td>${x.runs}</td><td>${x.breaks}</td><td>${x.defaults}</td></tr>`).join("")+'</tbody></table>';el("homePlayers").innerHTML=table;el("statsPlayers").innerHTML=table;const all=data.games.filter(g=>g.team==="Fairview 1"),wins=all.filter(g=>g.result==="W").length;el("homeGames").textContent=all.length;el("homeWins").textContent=wins;el("homePct").textContent=all.length?Math.round(wins/all.length*100)+"%":"—";el("homeRuns").textContent=all.filter(g=>g.run).length;el("homeBreaks").textContent=all.filter(g=>g.break8).length}
+function calcStats(){
+ const players=rosters["Fairview 1"];
+ const rows=players.map(p=>{
+  const g=data.games.filter(x=>x.team==="Fairview 1"&&x.player===p);
+  const ordered=g.slice().sort((a,b)=>(a.date||"").localeCompare(b.date||"")||(Number(a.gameNumber)||0)-(Number(b.gameNumber)||0));
+  const wins=g.filter(x=>x.result==="W").length;
+  const losses=g.filter(x=>x.result==="L").length;
+  const runs=g.filter(x=>x.run).length;
+  const breaks=g.filter(x=>x.break8).length;
+  const defaults=g.filter(x=>x.def).length;
+  let current=0,best=0,run=0,lastResult="";
+  for(const x of ordered){
+   if(x.result==="W"){
+    run=lastResult==="W"?run+1:1;
+    best=Math.max(best,run);
+   }else if(x.result==="L"){run=0}
+   lastResult=x.result;
+  }
+  if(ordered.length){
+   const latest=ordered[ordered.length-1].result;
+   if(latest==="W"||latest==="L"){
+    current=1;
+    for(let i=ordered.length-2;i>=0;i--){
+     if(ordered[i].result!==latest)break;
+     current++;
+    }
+    if(latest==="L")current=-current;
+   }
+  }
+  const recent=ordered.slice(-5).map(x=>x.result==="W"?"W":x.result==="L"?"L":"—").join(" ");
+  const pct=g.length?wins/g.length:0;
+  return {
+   player:p,games:g.length,wins,losses,pct,
+   pctLabel:g.length?(pct*100).toFixed(1)+"%":"—",
+   diff:wins-losses,runs,breaks,defaults,
+   runRate:g.length?(runs/g.length*100).toFixed(1)+"%":"—",
+   breakRate:g.length?(breaks/g.length*100).toFixed(1)+"%":"—",
+   current,best,recent
+  };
+ });
+ rows.sort((a,b)=>(b.games>0)-(a.games>0)||b.pct-a.pct||b.wins-a.wins||b.diff-a.diff||b.games-a.games||a.player.localeCompare(b.player));
+ rows.forEach((x,i)=>x.rank=i+1);
+ return rows;
+}
+function tableStats(){
+ const rows=calcStats();
+ const compact='<table><thead><tr><th>Rank</th><th>Player</th><th>Team role</th><th>Record</th><th>Win %</th><th>Games</th><th>+/-</th></tr></thead><tbody>'+
+ rows.map(x=>`<tr><td><strong>${x.games?`#${x.rank}`:"—"}</strong></td><td>${esc(x.player)}</td><td>${x.player==="Alex Gromiuk"?"Captain":x.player==="Joe Pucillo"?"2nd in Command":"—"}</td><td>${x.wins}-${x.losses}</td><td>${x.pctLabel}</td><td>${x.games}</td><td>${x.diff>0?"+":""}${x.diff}</td></tr>`).join("")+
+ '</tbody></table>';
+ const detailed='<table><thead><tr><th>Rank</th><th>Player</th><th>Record</th><th>Win %</th><th>Games</th><th>W</th><th>L</th><th>Game +/-</th><th>Table runs</th><th>Run rate</th><th>8-ball breaks</th><th>Break rate</th><th>Defaults</th><th>Current streak</th><th>Best win streak</th><th>Last 5</th></tr></thead><tbody>'+
+ rows.map(x=>`<tr><td><strong>${x.games?`#${x.rank}`:"—"}</strong></td><td>${esc(x.player)}</td><td><strong>${x.wins}-${x.losses}</strong></td><td>${x.pctLabel}</td><td>${x.games}</td><td>${x.wins}</td><td>${x.losses}</td><td>${x.diff>0?"+":""}${x.diff}</td><td>${x.runs}</td><td>${x.runRate}</td><td>${x.breaks}</td><td>${x.breakRate}</td><td>${x.defaults}</td><td>${x.current>0?`${x.current}W`:x.current<0?`${Math.abs(x.current)}L`:"—"}</td><td>${x.best}</td><td>${x.recent||"—"}</td></tr>`).join("")+
+ '</tbody></table>';
+ el("homePlayers").innerHTML=compact;
+ el("statsPlayers").innerHTML=detailed;
+ const all=data.games.filter(g=>g.team==="Fairview 1"),wins=all.filter(g=>g.result==="W").length;
+ el("homeGames").textContent=all.length;
+ el("homeWins").textContent=wins;
+ el("homePct").textContent=all.length?(wins/all.length*100).toFixed(1)+"%":"—";
+ el("homeRuns").textContent=all.filter(g=>g.run).length;
+ el("homeBreaks").textContent=all.filter(g=>g.break8).length;
+}
 function renderWeeks(){el("statsWeeks").innerHTML=data.teamWeeks.length?'<table><thead><tr><th>Date</th><th>Team</th><th>Opponent</th><th>Wins</th><th>Table runs</th><th>8-ball breaks</th><th>Defaults</th></tr></thead><tbody>'+data.teamWeeks.slice().sort((a,b)=>a.date.localeCompare(b.date)).map(x=>`<tr><td>${dateLabel(x.date)}</td><td>${esc(x.team)}</td><td>${esc(x.opponentTeam)}</td><td>${x.wins}</td><td>${x.runs}</td><td>${x.breaks}</td><td>${x.defaults}</td></tr>`).join("")+'</tbody></table>':'<p class="muted">No weekly team score sheets saved yet.</p>';el("weekLog").innerHTML=data.teamWeeks.filter(x=>x.team==="Fairview 1").length?`<p class="tiny">${data.teamWeeks.filter(x=>x.team==="Fairview 1").length} Fairview I weekly score sheet(s) saved.</p>`:"<p class=\"tiny\">No Fairview I weekly score sheets saved yet.</p>"}
 function renderAll(){renderSchedule();tableStats();renderWeeks();updateEntryCount()}
 function exportData(){const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="jefferson-pool-league-backup.json";a.click();URL.revokeObjectURL(url)}
