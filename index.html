@@ -117,7 +117,56 @@ function notice(title,text){document.getElementById("dialogTitle").textContent=t
 async function loginAdmin(){if(!cloudClient){notice("Cloud setup required","The app has not connected to Supabase yet. Check the cloud status at the bottom of the page.");return}const email=document.getElementById("adminEmail").value.trim(),password=document.getElementById("adminPassword").value;if(!email||!password){notice("Sign-in details required","Enter your administrator email and password.");return}const {data,error}=await cloudClient.auth.signInWithPassword({email,password});if(error){notice("Sign-in failed",error.message);return}await activateAdminSession(data.user)}
 async function logoutAdmin(){if(cloudClient)await cloudClient.auth.signOut();logged=false;document.getElementById("adminGate").style.display="block";document.getElementById("adminPanel").style.display="none";document.getElementById("adminPassword").value="";document.getElementById("adminEmail").value=""}
 function requireAdmin(){if(!logged){notice("Admin sign-in required","Sign in to make league changes.");return false}return true}
-function saveTeam(){if(!requireAdmin())return;const name=document.getElementById("teamName").value.trim();if(!name){notice("Team name needed","Enter a team name first.");return}const t={name,points:+document.getElementById("teamPoints").value||0,w:+document.getElementById("teamWins").value||0,l:+document.getElementById("teamLosses").value||0,t:+document.getElementById("teamTies").value||0,gf:+document.getElementById("teamFor").value||0,ga:+document.getElementById("teamAgainst").value||0};if(editingTeam!==null)data.teams[editingTeam]=t;else{const i=data.teams.findIndex(x=>x.name.toLowerCase()===name.toLowerCase());if(i>=0)data.teams[i]=t;else data.teams.push(t)}clearTeamForm();save()}
+ 
+/* FIXED: Team save now waits for Supabase confirmation and rolls back on failure. */
+let teamSaveInProgress=false;
+async function saveTeam(){
+ if(!requireAdmin())return;
+ if(teamSaveInProgress)return;
+ const button=document.querySelector('button[onclick="saveTeam()"]');
+ const name=document.getElementById("teamName").value.trim();
+ if(!name){notice("Team name needed","Enter a team name first.");return}
+ const fieldIds=["teamPoints","teamWins","teamLosses","teamTies","teamFor","teamAgainst"];
+ const values=fieldIds.map(id=>Number(document.getElementById(id).value));
+ if(values.some(v=>!Number.isSafeInteger(v)||v<0)){
+  notice("Invalid team statistics","Points, wins, losses, ties, games for and games against must be whole numbers of zero or greater.");
+  return;
+ }
+ if(!cloudClient){notice("Cloud unavailable","Supabase is not connected. No team changes were saved.");return}
+ if(!logged){notice("Admin sign-in required","Your administrator session is not active. Sign in again.");return}
+ const team={name,points:values[0],w:values[1],l:values[2],t:values[3],gf:values[4],ga:values[5]};
+ const oldTeams=data.teams.map(x=>({...x}));
+ const oldUpdated=data.updated;
+ const index=editingTeam!==null?editingTeam:data.teams.findIndex(x=>String(x.name).toLowerCase()===name.toLowerCase());
+ if(index>=0)data.teams[index]=team;else data.teams.push(team);
+ data.updated=new Date().toISOString();
+ teamSaveInProgress=true;
+ if(button){button.disabled=true;button.textContent="Saving…"}
+ cloudStatus("Saving team to shared league database…");
+ try{
+  localStorage.setItem("jcpl-data",JSON.stringify(data));
+  const {error}=await cloudClient.from("league_state").upsert(
+   {id:1,payload:data,updated_at:data.updated},
+   {onConflict:"id"}
+  );
+  if(error)throw error;
+  cloudStatus("Connected · shared league data saved");
+  clearTeamForm();
+  render();
+  notice("Team saved",`${name} was saved to the shared league database.`);
+ }catch(error){
+  data.teams=oldTeams;
+  data.updated=oldUpdated;
+  try{localStorage.setItem("jcpl-data",JSON.stringify(data))}catch(storageError){console.error("Local rollback failed",storageError)}
+  render();
+  cloudStatus("Team save failed · changes rolled back");
+  console.error("Team save failed",error);
+  notice("Team was not saved",error?.message||"The shared database rejected this update. Check league_state INSERT/UPDATE permissions and administrator row-level security policies.");
+ }finally{
+  teamSaveInProgress=false;
+  if(button){button.disabled=false;button.textContent="Save team"}
+ }
+}
 function editTeam(i){const t=data.teams[i];editingTeam=i;for(const [id,v] of Object.entries({teamName:t.name,teamPoints:t.points,teamWins:t.w,teamLosses:t.l,teamTies:t.t,teamFor:t.gf,teamAgainst:t.ga}))document.getElementById(id).value=v}
 function clearTeamForm(){editingTeam=null;document.getElementById("teamName").value="";["teamPoints","teamWins","teamLosses","teamTies","teamFor","teamAgainst"].forEach(id=>document.getElementById(id).value=0)}
 function deleteTeam(i){if(!requireAdmin())return;if(confirm("Delete "+data.teams[i].name+" from standings?")){data.teams.splice(i,1);save()}}
